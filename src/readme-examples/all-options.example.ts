@@ -20,7 +20,10 @@ parsePdfs([
              * slightly different parser options.
              */
             parserOptions: {
-                /** Every parser includes this option. See Year prefix section in the README for details. */
+                /**
+                 * Every parser includes this option. See Year prefix section in the README for
+                 * details.
+                 */
                 yearPrefix: 19,
             },
         },

@@ -126,14 +126,23 @@ testGroup({
                     $5  n 6
             `.split('\n'),
                 ),
-                [...keywords, /super \S+ purchase/],
+                [
+                    ...keywords,
+                    /super \S+ purchase/,
+                ],
                 'should work with RegExp keywords',
             );
         }
 
         sanitizerTest(
-            [' super duper thing', ' secret stuff delete  '],
-            [' super duper thing', ' f  '],
+            [
+                ' super duper thing',
+                ' secret stuff delete  ',
+            ],
+            [
+                ' super duper thing',
+                ' f  ',
+            ],
             [/\s+super duper thing/],
             'RegExp keywords should work with preceding spaces',
         );
@@ -143,7 +152,10 @@ testGroup({
                 '  5678 one thing 9876 9999                                10.63 95632 cow 789',
                 '  Van 9876                                                 11.11 cow',
             ],
-            ['  1 b 2 3  4,444.44 5 cow 6', '  d 7  8,888.88 cow'],
+            [
+                '  1 b 2 3  4,444.44 5 cow 6',
+                '  d 7  8,888.88 cow',
+            ],
             ['cow'],
             'handle keywords when replacement numbers are longer',
         );

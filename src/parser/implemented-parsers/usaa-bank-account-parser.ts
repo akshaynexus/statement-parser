@@ -2,8 +2,8 @@ import {
     collapseSpaces,
     createDateFromSlashFormat,
     getEnumTypedValues,
-    safeMatch,
     removeCommasFromNumberString,
+    safeMatch,
 } from 'augment-vir';
 import {dateWithinRange} from '../../augments/date';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
@@ -61,7 +61,12 @@ function performStateAction(
     parserOptions: CombineWithBaseParserOptions,
 ) {
     if (currentState === State.StatementPeriod && line !== '') {
-        const [, accountSuffix, startDateString, endDateString] = safeMatch(
+        const [
+            ,
+            accountSuffix,
+            startDateString,
+            endDateString,
+        ] = safeMatch(
             line,
             /([\d-]+)\s+.+?(\d{1,2}\/\d{1,2}\/\d{1,2}).+?(\d{1,2}\/\d{1,2}\/\d{1,2})/,
         );
@@ -83,10 +88,12 @@ function performStateAction(
     ) {
         const array = currentState === State.Debit ? output.expenses : output.incomes;
 
-        const [, dateString, amountString, descriptionString] = safeMatch(
-            line,
-            /^(\d{1,2}\/\d{1,2})\s+((?:\d+|,|\.)+)\s+(.*)$/,
-        );
+        const [
+            ,
+            dateString,
+            amountString,
+            descriptionString,
+        ] = safeMatch(line, /^(\d{1,2}\/\d{1,2})\s+((?:\d+|,|\.)+)\s+(.*)$/);
         const currentDebit = array[array.length - 1];
         if (dateString && amountString && descriptionString) {
             if (!output.startDate || !output.endDate) {

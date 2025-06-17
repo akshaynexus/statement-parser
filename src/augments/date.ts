@@ -6,7 +6,8 @@ import {isSanitizerMode} from '../global';
  * the given inputs, a date is created that is at least earlier than the given endDate.
  *
  * @param startDate Optional. The earlier (date wise) bounds for creating the new Date object. If
- *   this is not provided, a date is created that is as close to, but earlier than, the given endDate.
+ *   this is not provided, a date is created that is as close to, but earlier than, the given
+ *   endDate.
  * @param endDate Required. The later bounds for creating the new Date object.
  * @param monthNumber Month number for the new Date object. This is 1 indexed. So a `1` here
  *   corresponds to January.

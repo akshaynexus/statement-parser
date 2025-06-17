@@ -1,4 +1,4 @@
-import {createDateFromSlashFormat, safeMatch, removeCommasFromNumberString} from 'augment-vir';
+import {createDateFromSlashFormat, removeCommasFromNumberString, safeMatch} from 'augment-vir';
 import {dateWithinRange} from '../../augments/date';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
@@ -68,13 +68,23 @@ function processTransactionLine(
     line: string,
     endDate: Date,
 ): UsaaVisaCreditCardTransaction | string {
-    const [, transactionDate, postDate, referenceNumber, description, amount] = safeMatch(
-        line,
-        transactionRegExp,
-    );
+    const [
+        ,
+        transactionDate,
+        postDate,
+        referenceNumber,
+        description,
+        amount,
+    ] = safeMatch(line, transactionRegExp);
     if (transactionDate && postDate && referenceNumber && description && amount) {
-        const [transactionMonth, transactionDay] = transactionDate.split('/');
-        const [postMonth, postDay] = postDate.split('/');
+        const [
+            transactionMonth,
+            transactionDay,
+        ] = transactionDate.split('/');
+        const [
+            postMonth,
+            postDay,
+        ] = postDate.split('/');
         return {
             date: dateWithinRange(
                 undefined,
@@ -124,8 +134,14 @@ function performStateAction(
             array.push(result);
         }
     } else if (currentState === State.Header) {
-        const [, closingDateString] = safeMatch(line, closingDateRegExp);
-        const [, accountNumberString] = safeMatch(line, extractAccountNumberRegExp);
+        const [
+            ,
+            closingDateString,
+        ] = safeMatch(line, closingDateRegExp);
+        const [
+            ,
+            accountNumberString,
+        ] = safeMatch(line, extractAccountNumberRegExp);
         if (closingDateString) {
             output.endDate = createDateFromSlashFormat(closingDateString, parserOptions.yearPrefix);
         } else if (accountNumberString && !output.accountSuffix) {

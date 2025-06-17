@@ -10,9 +10,9 @@ const endTrigger = 'npm notice === Tarball Details === ';
 async function getRawPackFileList(): Promise<string[]> {
     const packOutput: string[] = (await runBashCommand(packCommand, true)).split('\n');
 
-    const startTriggerIndex = packOutput.findIndex(line => line.includes('Tarball Contents'));
+    const startTriggerIndex = packOutput.findIndex((line) => line.includes('Tarball Contents'));
     const startIndex = startTriggerIndex > -1 ? startTriggerIndex + 1 : 0;
-    const endTriggerIndex = packOutput.findIndex(line => line.includes('Tarball Details'));
+    const endTriggerIndex = packOutput.findIndex((line) => line.includes('Tarball Details'));
     const endIndex = endTriggerIndex > -1 ? endTriggerIndex : packOutput.length - 1;
 
     return packOutput.slice(startIndex, endIndex);
@@ -22,10 +22,15 @@ const fileLineRegExp = /npm notice (?:[\d\.,]+\w+B )?(.+?)\s*$/;
 
 async function extractPackFiles(): Promise<string[]> {
     const raw = await getRawPackFileList();
-    const lines = raw.filter(line => line.trim() && line.includes('npm notice') && !line.includes('📦'));
+    const lines = raw.filter(
+        (line) => line.trim() && line.includes('npm notice') && !line.includes('📦'),
+    );
 
     const extractedFiles = lines.map((line) => {
-        const [, fileName] = safeMatch(line, fileLineRegExp);
+        const [
+            ,
+            fileName,
+        ] = safeMatch(line, fileLineRegExp);
 
         if (!fileName) {
             throw new Error(`Could not match npm pack file line "${line}" with ${fileLineRegExp}`);
@@ -56,7 +61,7 @@ testGroup(async (runTest) => {
         expect: true,
         test: async () => {
             const rawFiles = await getRawPackFileList();
-            return rawFiles.some(line => line.includes('LICENSE'));
+            return rawFiles.some((line) => line.includes('LICENSE'));
         },
     });
 
@@ -65,7 +70,7 @@ testGroup(async (runTest) => {
         expect: true,
         test: async () => {
             const rawFiles = await getRawPackFileList();
-            return rawFiles.some(line => line.includes('package.json'));
+            return rawFiles.some((line) => line.includes('package.json'));
         },
     });
 

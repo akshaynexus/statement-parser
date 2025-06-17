@@ -1,4 +1,4 @@
-import {createDateFromUtcIsoFormat, safeMatch, removeCommasFromNumberString} from 'augment-vir';
+import {createDateFromUtcIsoFormat, removeCommasFromNumberString, safeMatch} from 'augment-vir';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {createStatementParser} from '../statement-parser';
 
@@ -19,7 +19,12 @@ export const exampleStatementParser = createStatementParser<State, ParsedOutput>
 const validPaymentRegExp = /(\d{2}\/\d{2})\s+(.+)\$([-,.\d]+)/;
 
 function readPayment(line: string): ParsedTransaction | undefined {
-    const [, dateString, descriptionString, amountString] = safeMatch(line, validPaymentRegExp);
+    const [
+        ,
+        dateString,
+        descriptionString,
+        amountString,
+    ] = safeMatch(line, validPaymentRegExp);
 
     if (dateString && descriptionString && amountString) {
         return {

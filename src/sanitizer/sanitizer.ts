@@ -49,11 +49,22 @@ const digitsRegExp = new RegExp(
 const whitespaceRegExp = /\s+/;
 const wordsRegExp = new RegExp(`[^${justSymbolsRegExp.source}\\s]+`);
 
-const allRegExps = [symbolsToPreserveRegExp, digitsRegExp, whitespaceRegExp, wordsRegExp];
+const allRegExps = [
+    symbolsToPreserveRegExp,
+    digitsRegExp,
+    whitespaceRegExp,
+    wordsRegExp,
+];
 
 const exclusiveRegExps = new Map<RegExp, RegExp>(
-    [...allRegExps, digitsOnlyRegExp].map((regExp) => {
-        return [regExp, makeRegExpForWholeLine(regExp)];
+    [
+        ...allRegExps,
+        digitsOnlyRegExp,
+    ].map((regExp) => {
+        return [
+            regExp,
+            makeRegExpForWholeLine(regExp),
+        ];
     }),
 );
 

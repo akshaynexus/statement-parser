@@ -3,8 +3,8 @@ import {
     createDateFromNamedCommaFormat,
     createDateFromSlashFormat,
     getEnumTypedValues,
-    safeMatch,
     removeCommasFromNumberString,
+    safeMatch,
 } from 'augment-vir';
 import {isSanitizerMode} from '../../global';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
@@ -47,7 +47,11 @@ export const paypalStatementParser = createStatementParser<State, PaypalOutput>(
     next: nextState,
     initialState: State.Header,
     endState: State.End,
-    parserKeywords: [...getEnumTypedValues(ParsingTriggers), activityHeader, pageEndRegExp],
+    parserKeywords: [
+        ...getEnumTypedValues(ParsingTriggers),
+        activityHeader,
+        pageEndRegExp,
+    ],
 });
 
 function performStateAction(currentState: State, line: string, output: PaypalOutput) {
@@ -55,17 +59,26 @@ function performStateAction(currentState: State, line: string, output: PaypalOut
     const lastIncome = output.incomes[output.incomes.length - 1];
 
     if (currentState === State.HeaderData && !output.startDate) {
-        const [, startDate, endDate, accountId] = safeMatch(line, headerDataLineRegExp);
+        const [
+            ,
+            startDate,
+            endDate,
+            accountId,
+        ] = safeMatch(line, headerDataLineRegExp);
         if (startDate && endDate && accountId) {
             output.startDate = createDateFromNamedCommaFormat(startDate, isSanitizerMode());
             output.endDate = createDateFromNamedCommaFormat(endDate, isSanitizerMode());
             output.accountSuffix = accountId;
         }
     } else if (currentState === State.Activity) {
-        const [, date, description, amountString, fees, total] = safeMatch(
-            line,
-            transactionStartRegExp,
-        );
+        const [
+            ,
+            date,
+            description,
+            amountString,
+            fees,
+            total,
+        ] = safeMatch(line, transactionStartRegExp);
         if (date && description && amountString && fees && total) {
             const amount = Number(removeCommasFromNumberString(amountString));
             const newTransaction: PaypalTransaction = {

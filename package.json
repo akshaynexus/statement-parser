@@ -1,7 +1,7 @@
 {
-    "name": "statement-parser",
+    "name": "statement-parser-fab",
     "version": "2.0.1",
-    "description": "Parse bank and credit card statements.",
+    "description": "Parse bank and credit card statements. Updated fork with FAB (First Abu Dhabi Bank) support and maintained dependencies.",
     "keywords": [
         "pdf",
         "bank",
@@ -16,22 +16,28 @@
         "costco",
         "prime",
         "paypal",
+        "fab",
+        "first abu dhabi bank",
+        "uae",
+        "aed",
         "parser",
         "statement",
-        "statements"
+        "statements",
+        "maintained",
+        "updated"
     ],
-    "homepage": "https://github.com/electrovir/statement-parser",
+    "homepage": "https://github.com/akshaynexus/statement-parser",
     "bugs": {
-        "url": "https://github.com/electrovir/statement-parser/issues"
+        "url": "https://github.com/akshaynexus/statement-parser/issues"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/electrovir/statement-parser"
+        "url": "https://github.com/akshaynexus/statement-parser"
     },
     "license": "MIT",
     "author": {
-        "name": "electrovir",
-        "url": "https://github.com/electrovir"
+        "name": "akshaynexus",
+        "url": "https://github.com/akshaynexus"
     },
     "main": "dist/src/index.js",
     "typings": "dist/src/index.d.ts",

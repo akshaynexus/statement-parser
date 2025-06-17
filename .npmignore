@@ -27,3 +27,4 @@ dist/package-version*
 dist/bash*
 bun.lock
 *.pdf
+examples/

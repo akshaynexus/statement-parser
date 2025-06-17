@@ -3,8 +3,8 @@ import {
     createDateFromSlashFormat,
     getEnumTypedValues,
     Overwrite,
-    safeMatch,
     removeCommasFromNumberString,
+    safeMatch,
 } from 'augment-vir';
 import {parsePageItems} from 'pdf-text-reader';
 import {TextItem} from 'pdfjs-dist/types/src/display/api';
@@ -109,7 +109,10 @@ function outputValidation(output: ParsedOutput) {
 const amountRegExp = /^-?\$([\d,\.]+)\s*$/i;
 
 function parseAmount(input: string, negate: boolean): number {
-    const [, amountMatch] = safeMatch(input, amountRegExp);
+    const [
+        ,
+        amountMatch,
+    ] = safeMatch(input, amountRegExp);
 
     if (amountMatch) {
         const amount = Number(removeCommasFromNumberString(amountMatch));
@@ -136,7 +139,13 @@ function parseTransactionLine(
         );
     }
 
-    const [, monthString, dayString, description, amountString] = safeMatch(
+    const [
+        ,
+        monthString,
+        dayString,
+        description,
+        amountString,
+    ] = safeMatch(
         line,
         /(?:\d{1,2}\/\d{1,2}\s*)?(\d{1,2})\/(\d{1,2})\s+(\S.+)\s+(-?\$[\d\.,]+)?\s*$/i,
     );
@@ -175,8 +184,15 @@ function performStateAction(
     parserOptions: CombineWithBaseParserOptions,
 ) {
     if (currentState === State.Header) {
-        const [, startDateString, endDateString] = safeMatch(line, billingPeriodRegExp);
-        const [, accountSuffixString] = safeMatch(line, accountNumberRegExp);
+        const [
+            ,
+            startDateString,
+            endDateString,
+        ] = safeMatch(line, billingPeriodRegExp);
+        const [
+            ,
+            accountSuffixString,
+        ] = safeMatch(line, accountNumberRegExp);
         if (startDateString && endDateString) {
             output.startDate = createDateFromSlashFormat(startDateString, parserOptions.yearPrefix);
             output.endDate = createDateFromSlashFormat(endDateString, parserOptions.yearPrefix);

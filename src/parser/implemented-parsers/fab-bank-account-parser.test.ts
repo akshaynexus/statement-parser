@@ -30,7 +30,7 @@ const mockFabStatementText = [
     '',
     'Closing Book Balance 18,760.95',
     '',
-    '*** END OF STATEMENT ***'
+    '*** END OF STATEMENT ***',
 ];
 
 testGroup({
@@ -73,7 +73,7 @@ testGroup({
                     name: 'test-statement',
                 });
 
-                return result.incomes.map(income => ({
+                return result.incomes.map((income) => ({
                     description: income.description,
                     amount: income.amount,
                     date: income.date.toISOString().split('T')[0], // Just the date part
@@ -113,7 +113,7 @@ testGroup({
                     name: 'test-statement',
                 });
 
-                const expenses = result.expenses.map(expense => ({
+                const expenses = result.expenses.map((expense) => ({
                     description: expense.description,
                     amount: expense.amount,
                     date: expense.date.toISOString().split('T')[0],
@@ -166,19 +166,22 @@ testGroup({
                     name: 'test-statement',
                 });
 
-                const atmWithdrawals = result.expenses.filter(expense => 
-                    expense.description.includes('Switch Transaction')
+                const atmWithdrawals = result.expenses.filter((expense) =>
+                    expense.description.includes('Switch Transaction'),
                 );
-                const atmCharges = result.expenses.filter(expense => 
-                    expense.description.includes('SW WDL Chgs')
+                const atmCharges = result.expenses.filter((expense) =>
+                    expense.description.includes('SW WDL Chgs'),
                 );
-                const atmDeposits = result.incomes.filter(income => 
-                    income.description.includes('ATM Cash Deposit')
+                const atmDeposits = result.incomes.filter((income) =>
+                    income.description.includes('ATM Cash Deposit'),
                 );
 
                 return {
                     withdrawalCount: atmWithdrawals.length,
-                    withdrawalAmount: atmWithdrawals.reduce((sum, tx) => sum + Math.abs(tx.amount), 0),
+                    withdrawalAmount: atmWithdrawals.reduce(
+                        (sum, tx) => sum + Math.abs(tx.amount),
+                        0,
+                    ),
                     chargeCount: atmCharges.length,
                     chargeAmount: atmCharges.reduce((sum, tx) => sum + Math.abs(tx.amount), 0),
                     depositCount: atmDeposits.length,
@@ -206,7 +209,10 @@ testGroup({
                 });
 
                 const totalIncome = result.incomes.reduce((sum, tx) => sum + tx.amount, 0);
-                const totalExpenses = result.expenses.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+                const totalExpenses = result.expenses.reduce(
+                    (sum, tx) => sum + Math.abs(tx.amount),
+                    0,
+                );
 
                 return {
                     totalTransactions: result.incomes.length + result.expenses.length,
@@ -232,8 +238,9 @@ testGroup({
             test: async () => {
                 const customStatementText = [...mockFabStatementText];
                 // Replace the customer name line
-                customStatementText[4] = 'SARAH JENNIFER BROWN WILSON                               AC-NUM 987-654-3210987-65-4';
-                
+                customStatementText[4] =
+                    'SARAH JENNIFER BROWN WILSON                               AC-NUM 987-654-3210987-65-4';
+
                 const result = await fabBankAccountParser.parseText({
                     textLines: customStatementText,
                     parserOptions: undefined,
@@ -252,4 +259,4 @@ testGroup({
             },
         });
     },
-}); 
+});

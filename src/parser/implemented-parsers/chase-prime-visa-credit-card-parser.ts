@@ -1,4 +1,4 @@
-import {createDateFromSlashFormat, safeMatch, removeCommasFromNumberString} from 'augment-vir';
+import {createDateFromSlashFormat, removeCommasFromNumberString, safeMatch} from 'augment-vir';
 import {dateWithinRange} from '../../augments/date';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
@@ -55,12 +55,17 @@ function processTransactionLine(
     startDate: Date,
     endDate: Date,
 ): ParsedTransaction | string {
-    const [, date, description, amount] = safeMatch(
-        line,
-        /^(\d{1,2}\/\d{1,2})\s+(\S.+?)\s+([\.\d,\-]+)$/,
-    );
+    const [
+        ,
+        date,
+        description,
+        amount,
+    ] = safeMatch(line, /^(\d{1,2}\/\d{1,2})\s+(\S.+?)\s+([\.\d,\-]+)$/);
     if (date && description && amount) {
-        const [month, day] = date.split('/');
+        const [
+            month,
+            day,
+        ] = date.split('/');
         return {
             amount: Number(removeCommasFromNumberString(amount)),
             description,
@@ -79,8 +84,15 @@ function performStateAction(
     parserOptions: CombineWithBaseParserOptions<ChaseCreditCardParsingOptions>,
 ) {
     if (currentState === State.Header) {
-        const [, startDateString, endDateString] = safeMatch(line, closingDateRegExp);
-        const [, accountNumber] = safeMatch(line, accountNumberRegExp);
+        const [
+            ,
+            startDateString,
+            endDateString,
+        ] = safeMatch(line, closingDateRegExp);
+        const [
+            ,
+            accountNumber,
+        ] = safeMatch(line, accountNumberRegExp);
 
         if (startDateString && endDateString) {
             const startDate = createDateFromSlashFormat(startDateString, parserOptions.yearPrefix);

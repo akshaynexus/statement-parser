@@ -65,28 +65,41 @@ testGroup((runTest) => {
             errorMessage: CliErrors.InvalidPdfPath('missing-file'),
         },
         description: 'api rejects invalid PDF file path',
-        test: testTempOutputFile([ParserType.Paypal, 'missing-file']),
+        test: testTempOutputFile([
+            ParserType.Paypal,
+            'missing-file',
+        ]),
     });
     runTest({
         expectError: {
             errorMessage: `PDF file "missing-file.pdf" does not exist`,
         },
         description: 'api rejects PDF file path that is not on disk',
-        test: testTempOutputFile([ParserType.Paypal, 'missing-file.pdf']),
+        test: testTempOutputFile([
+            ParserType.Paypal,
+            'missing-file.pdf',
+        ]),
     });
     runTest({
         expectError: {
             errorMessage: CliErrors.MissingOutputFileName,
         },
         description: 'api rejects missing output file name',
-        test: testTempOutputFile([ParserType.Paypal, dummyPdfPath]),
+        test: testTempOutputFile([
+            ParserType.Paypal,
+            dummyPdfPath,
+        ]),
     });
     runTest({
         expectError: {
             errorMessage: CliErrors.InvalidOutputFileName('output-file'),
         },
         description: 'api rejects invalid output file name',
-        test: testTempOutputFile([ParserType.Paypal, dummyPdfPath, 'output-file']),
+        test: testTempOutputFile([
+            ParserType.Paypal,
+            dummyPdfPath,
+            'output-file',
+        ]),
     });
     runTest({
         description: 'parse dummy pdf file',
@@ -94,7 +107,11 @@ testGroup((runTest) => {
             errorMessage:
                 /Failed to parse the original PDF before trying to sanitize it: Error: EndStateNotReachedError: Reached end of input before hitting end state\. .+/,
         },
-        test: testTempOutputFile([ParserType.Paypal, dummyPdfPath, 'dummy-output-file.json']),
+        test: testTempOutputFile([
+            ParserType.Paypal,
+            dummyPdfPath,
+            'dummy-output-file.json',
+        ]),
     });
     runTest({
         expectError: {

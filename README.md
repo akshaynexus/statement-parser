@@ -27,7 +27,7 @@ The high level most useful api function is the asynchronous [`parsePdfs`](https:
 <!-- example-link: src/readme-examples/api-simple-parse.example.ts -->
 
 ```TypeScript
-import {parsePdfs, ParserType} from 'statement-parser';
+import {parsePdfs, ParserType} from 'statement-parser-fab';
 
 parsePdfs([
     {
@@ -44,7 +44,7 @@ parsePdfs([
 <!-- example-link: src/readme-examples/api-simple-parse-inputs.example.ts -->
 
 ```TypeScript
-import {ParserType, StatementPdf} from 'statement-parser';
+import {ParserType, StatementPdf} from 'statement-parser-fab';
 
 const myPdfToParse: StatementPdf = {
     parserInput: {
@@ -80,7 +80,7 @@ Simply import `ParserType` to use these keys, as shown below and in the other [E
 <!-- example-link: src/readme-examples/parser-type.example.ts -->
 
 ```TypeScript
-import {ParserType} from 'statement-parser';
+import {ParserType} from 'statement-parser-fab';
 
 // possible ParserType keys
 ParserType.ChasePrimeVisaCredit;
@@ -98,7 +98,7 @@ ParserType.Paypal;
     <!-- example-link: src/readme-examples/all-options.example.ts -->
 
     ```TypeScript
-    import {parsePdfs, ParserType} from 'statement-parser';
+    import {parsePdfs, ParserType} from 'statement-parser-fab';
 
     parsePdfs([
         {
@@ -120,7 +120,10 @@ ParserType.Paypal;
                  * slightly different parser options.
                  */
                 parserOptions: {
-                    /** Every parser includes this option. See Year prefix section in the README for details. */
+                    /**
+                     * Every parser includes this option. See Year prefix section in the README for
+                     * details.
+                     */
                     yearPrefix: 19,
                 },
             },
@@ -149,7 +152,7 @@ ParserType.Paypal;
     <!-- example-link: src/readme-examples/better-async.example.ts -->
 
     ```TypeScript
-    import {parsePdfs, ParserType} from 'statement-parser';
+    import {parsePdfs, ParserType} from 'statement-parser-fab';
 
     async function main() {
         const results = await parsePdfs([
@@ -179,7 +182,7 @@ ParserType.Paypal;
     <!-- example-link: src/readme-examples/direct-parsing.example.ts -->
 
     ```TypeScript
-    import {parsers, ParserType} from 'statement-parser';
+    import {parsers, ParserType} from 'statement-parser-fab';
 
     const parser = parsers[ParserType.Paypal];
     parser.parsePdf({filePath: 'my/paypal/file.pdf'}).then((result) => console.log(result));
@@ -190,10 +193,17 @@ ParserType.Paypal;
     <!-- example-link: src/readme-examples/direct-text-parsing.example.ts -->
 
     ```TypeScript
-    import {parsers, ParserType} from 'statement-parser';
+    import {parsers, ParserType} from 'statement-parser-fab';
 
     const parser = parsers[ParserType.Paypal];
-    parser.parseText({textLines: ['text here', 'line 2 here', 'line 3', 'etc.']});
+    parser.parseText({
+        textLines: [
+            'text here',
+            'line 2 here',
+            'line 3',
+            'etc.',
+        ],
+    });
     ```
 
 -   Parsing a single FAB (First Abu Dhabi Bank) statement:
@@ -201,7 +211,7 @@ ParserType.Paypal;
     <!-- example-link: src/readme-examples/fab-single-statement.example.ts -->
 
     ```TypeScript
-    import {parsePdfs, ParserType} from 'statement-parser';
+    import {parsePdfs, ParserType} from 'statement-parser-fab';
 
     parsePdfs([
         {
@@ -221,11 +231,14 @@ ParserType.Paypal;
             console.log('Account Suffix:', statement.data.accountSuffix);
             console.log('Income Transactions:', statement.data.incomes.length);
             console.log('Expense Transactions:', statement.data.expenses.length);
-            
+
             // Calculate totals
             const totalIncome = statement.data.incomes.reduce((sum, tx) => sum + tx.amount, 0);
-            const totalExpenses = statement.data.expenses.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
-            
+            const totalExpenses = statement.data.expenses.reduce(
+                (sum, tx) => sum + Math.abs(tx.amount),
+                0,
+            );
+
             console.log('Total Income: AED', totalIncome.toFixed(2));
             console.log('Total Expenses: AED', totalExpenses.toFixed(2));
             console.log('Net Amount: AED', (totalIncome - totalExpenses).toFixed(2));
@@ -238,7 +251,7 @@ ParserType.Paypal;
     <!-- example-link: src/readme-examples/fab-multiple-statements.example.ts -->
 
     ```TypeScript
-    import {parsePdfs, ParserType} from 'statement-parser';
+    import {parsePdfs, ParserType} from 'statement-parser-fab';
 
     const fabStatements = [
         'path/to/fab-january-2024.pdf',
@@ -247,7 +260,7 @@ ParserType.Paypal;
     ];
 
     parsePdfs(
-        fabStatements.map(filePath => ({
+        fabStatements.map((filePath) => ({
             parserInput: {
                 filePath,
                 parserOptions: {
@@ -259,17 +272,21 @@ ParserType.Paypal;
     ).then((results) => {
         let totalIncome = 0;
         let totalExpenses = 0;
-        
+
         results.forEach((result) => {
             const income = result.data.incomes.reduce((sum, tx) => sum + tx.amount, 0);
             const expenses = result.data.expenses.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
-            
+
             totalIncome += income;
             totalExpenses += expenses;
-            
-            console.log(`${result.data.name}: Income AED ${income.toFixed(2)}, Expenses AED ${expenses.toFixed(2)}`);
+
+            console.log(
+                `${result.data.name}: Income AED ${income.toFixed(2)}, Expenses AED ${expenses.toFixed(
+                    2,
+                )}`,
+            );
         });
-        
+
         console.log(`\nTotal across all statements:`);
         console.log(`Income: AED ${totalIncome.toFixed(2)}`);
         console.log(`Expenses: AED ${totalExpenses.toFixed(2)}`);
@@ -282,15 +299,17 @@ ParserType.Paypal;
     <!-- example-link: src/readme-examples/fab-direct-parsing.example.ts -->
 
     ```TypeScript
-    import {parsers, ParserType} from 'statement-parser';
+    import {parsers, ParserType} from 'statement-parser-fab';
 
     const fabParser = parsers[ParserType.FabBank];
-    fabParser.parsePdf({
-        filePath: 'path/to/fab-statement.pdf',
-        parserOptions: {
-            yearPrefix: 20,
-        },
-    }).then((result) => console.log(result));
+    fabParser
+        .parsePdf({
+            filePath: 'path/to/fab-statement.pdf',
+            parserOptions: {
+                yearPrefix: 20,
+            },
+        })
+        .then((result) => console.log(result));
     ```
 
 ## Year prefix
