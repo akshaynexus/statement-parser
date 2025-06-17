@@ -51,8 +51,8 @@ testGroup({
                     'hello there you are a bold one you are doomed oh I do not think so indeed so uncivilized',
                 ],
                 [
-                    'hello there you are a bold one you are ',
-                    'doomed oh I do not think so indeed so ',
+                    'hello there you are a bold one you are',
+                    'doomed oh I do not think so indeed so',
                     'uncivilized',
                 ],
             ),
