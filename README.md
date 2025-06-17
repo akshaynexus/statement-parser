@@ -4,7 +4,7 @@
 
 Parse bank and credit card statements.
 
-For English USD only (currently at least).
+For English USD, AED only (currently at least).
 
 See the [Parsers](#parsers) section below for the available parsers.
 
@@ -70,6 +70,7 @@ Currently built parsers are the following:
 
 -   **`ParserType.ChasePrimeVisaCredit`**: for credit card statements from Chase for the Amazon Prime Visa credit card.
 -   **`ParserType.CitiCostcoVisaCredit`**: for credit card statements from Citi for the Costco Visa credit card.
+-   **`ParserType.FabBank`**: for checking and savings account statements from First Abu Dhabi Bank (FAB).
 -   **`ParserType.UsaaBank`**: for checking and savings account statements with USAA.
 -   **`ParserType.UsaaVisaCredit`**: for Visa credit card statements from USAA.
 -   **`ParserType.Paypal`**: for statements from PayPal.
@@ -84,6 +85,7 @@ import {ParserType} from 'statement-parser';
 // possible ParserType keys
 ParserType.ChasePrimeVisaCredit;
 ParserType.CitiCostcoVisaCredit;
+ParserType.FabBank;
 ParserType.UsaaBank;
 ParserType.UsaaVisaCredit;
 ParserType.Paypal;
@@ -192,6 +194,103 @@ ParserType.Paypal;
 
     const parser = parsers[ParserType.Paypal];
     parser.parseText({textLines: ['text here', 'line 2 here', 'line 3', 'etc.']});
+    ```
+
+-   Parsing a single FAB (First Abu Dhabi Bank) statement:
+
+    <!-- example-link: src/readme-examples/fab-single-statement.example.ts -->
+
+    ```TypeScript
+    import {parsePdfs, ParserType} from 'statement-parser';
+
+    parsePdfs([
+        {
+            parserInput: {
+                filePath: 'path/to/your/fab-statement.pdf',
+                name: 'FAB Statement - January 2024',
+                parserOptions: {
+                    yearPrefix: 20, // For years 2000-2099
+                },
+            },
+            type: ParserType.FabBank,
+        },
+    ]).then((results) => {
+        const statement = results[0];
+        if (statement) {
+            console.log('Customer:', statement.data.name);
+            console.log('Account Suffix:', statement.data.accountSuffix);
+            console.log('Income Transactions:', statement.data.incomes.length);
+            console.log('Expense Transactions:', statement.data.expenses.length);
+            
+            // Calculate totals
+            const totalIncome = statement.data.incomes.reduce((sum, tx) => sum + tx.amount, 0);
+            const totalExpenses = statement.data.expenses.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+            
+            console.log('Total Income: AED', totalIncome.toFixed(2));
+            console.log('Total Expenses: AED', totalExpenses.toFixed(2));
+            console.log('Net Amount: AED', (totalIncome - totalExpenses).toFixed(2));
+        }
+    });
+    ```
+
+-   Parsing multiple FAB statements:
+
+    <!-- example-link: src/readme-examples/fab-multiple-statements.example.ts -->
+
+    ```TypeScript
+    import {parsePdfs, ParserType} from 'statement-parser';
+
+    const fabStatements = [
+        'path/to/fab-january-2024.pdf',
+        'path/to/fab-february-2024.pdf',
+        'path/to/fab-march-2024.pdf',
+    ];
+
+    parsePdfs(
+        fabStatements.map(filePath => ({
+            parserInput: {
+                filePath,
+                parserOptions: {
+                    yearPrefix: 20,
+                },
+            },
+            type: ParserType.FabBank,
+        })),
+    ).then((results) => {
+        let totalIncome = 0;
+        let totalExpenses = 0;
+        
+        results.forEach((result) => {
+            const income = result.data.incomes.reduce((sum, tx) => sum + tx.amount, 0);
+            const expenses = result.data.expenses.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+            
+            totalIncome += income;
+            totalExpenses += expenses;
+            
+            console.log(`${result.data.name}: Income AED ${income.toFixed(2)}, Expenses AED ${expenses.toFixed(2)}`);
+        });
+        
+        console.log(`\nTotal across all statements:`);
+        console.log(`Income: AED ${totalIncome.toFixed(2)}`);
+        console.log(`Expenses: AED ${totalExpenses.toFixed(2)}`);
+        console.log(`Net: AED ${(totalIncome - totalExpenses).toFixed(2)}`);
+    });
+    ```
+
+-   Direct FAB parser usage:
+
+    <!-- example-link: src/readme-examples/fab-direct-parsing.example.ts -->
+
+    ```TypeScript
+    import {parsers, ParserType} from 'statement-parser';
+
+    const fabParser = parsers[ParserType.FabBank];
+    fabParser.parsePdf({
+        filePath: 'path/to/fab-statement.pdf',
+        parserOptions: {
+            yearPrefix: 20,
+        },
+    }).then((result) => console.log(result));
     ```
 
 ## Year prefix

@@ -14,6 +14,11 @@ export type StatementPdf =
           type: ParserType.CitiCostcoVisaCredit;
       }
     | {
+          parserInput: ParsePdfFunctionInput<AllParserOptions[ParserType.FabBank]>;
+          /** Type is always required. Without it, the package doesn't know which parser to use. */
+          type: ParserType.FabBank;
+      }
+    | {
           parserInput: ParsePdfFunctionInput<AllParserOptions[ParserType.UsaaBank]>;
           /** Type is always required. Without it, the package doesn't know which parser to use. */
           type: ParserType.UsaaBank;
