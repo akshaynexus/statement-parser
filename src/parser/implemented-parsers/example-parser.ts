@@ -1,4 +1,4 @@
-import {createDateFromUtcIsoFormat, safeMatch, stripCommasFromNumberString} from 'augment-vir';
+import {createDateFromUtcIsoFormat, safeMatch, removeCommasFromNumberString} from 'augment-vir';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {createStatementParser} from '../statement-parser';
 
@@ -23,7 +23,7 @@ function readPayment(line: string): ParsedTransaction | undefined {
 
     if (dateString && descriptionString && amountString) {
         return {
-            amount: Number(stripCommasFromNumberString(amountString)),
+            amount: Number(removeCommasFromNumberString(amountString)),
             description: descriptionString,
             date: createDateFromUtcIsoFormat(dateString),
             originalText: [line],

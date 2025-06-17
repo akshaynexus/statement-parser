@@ -1,4 +1,4 @@
-import {createDateFromSlashFormat, safeMatch, stripCommasFromNumberString} from 'augment-vir';
+import {createDateFromSlashFormat, safeMatch, removeCommasFromNumberString} from 'augment-vir';
 import {dateWithinRange} from '../../augments/date';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
@@ -62,7 +62,7 @@ function processTransactionLine(
     if (date && description && amount) {
         const [month, day] = date.split('/');
         return {
-            amount: Number(stripCommasFromNumberString(amount)),
+            amount: Number(removeCommasFromNumberString(amount)),
             description,
             date: dateWithinRange(startDate, endDate, Number(month), Number(day)),
             originalText: [line],

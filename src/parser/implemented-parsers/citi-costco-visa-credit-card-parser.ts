@@ -4,7 +4,7 @@ import {
     getEnumTypedValues,
     Overwrite,
     safeMatch,
-    stripCommasFromNumberString,
+    removeCommasFromNumberString,
 } from 'augment-vir';
 import {parsePageItems} from 'pdf-text-reader';
 import {TextItem} from 'pdfjs-dist/types/src/display/api';
@@ -112,7 +112,7 @@ function parseAmount(input: string, negate: boolean): number {
     const [, amountMatch] = safeMatch(input, amountRegExp);
 
     if (amountMatch) {
-        const amount = Number(stripCommasFromNumberString(amountMatch));
+        const amount = Number(removeCommasFromNumberString(amountMatch));
         let multiplier = negate ? -1 : 1;
 
         if (input[0] === '-') {

@@ -3,7 +3,7 @@ import {
     createDateFromSlashFormat,
     getEnumTypedValues,
     safeMatch,
-    stripCommasFromNumberString,
+    removeCommasFromNumberString,
 } from 'augment-vir';
 import {dateWithinRange} from '../../augments/date';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
@@ -107,7 +107,7 @@ function performStateAction(
             );
             array.push({
                 date: date,
-                amount: Number(stripCommasFromNumberString(amountString)),
+                amount: Number(removeCommasFromNumberString(amountString)),
                 description: collapseSpaces(descriptionString).trim(),
                 from: undefined,
                 originalText: [line],

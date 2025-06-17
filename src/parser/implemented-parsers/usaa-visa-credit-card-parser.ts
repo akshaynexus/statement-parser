@@ -1,4 +1,4 @@
-import {createDateFromSlashFormat, safeMatch, stripCommasFromNumberString} from 'augment-vir';
+import {createDateFromSlashFormat, safeMatch, removeCommasFromNumberString} from 'augment-vir';
 import {dateWithinRange} from '../../augments/date';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
 import {CombineWithBaseParserOptions} from '../parser-options';
@@ -83,7 +83,7 @@ function processTransactionLine(
                 Number(transactionDay),
             ),
             postDate: dateWithinRange(undefined, endDate, Number(postMonth), Number(postDay)),
-            amount: Number(stripCommasFromNumberString(amount)),
+            amount: Number(removeCommasFromNumberString(amount)),
             description,
             referenceNumber,
             originalText: [line],

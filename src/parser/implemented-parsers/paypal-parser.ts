@@ -4,7 +4,7 @@ import {
     createDateFromSlashFormat,
     getEnumTypedValues,
     safeMatch,
-    stripCommasFromNumberString,
+    removeCommasFromNumberString,
 } from 'augment-vir';
 import {isSanitizerMode} from '../../global';
 import {ParsedOutput, ParsedTransaction} from '../parsed-output';
@@ -67,13 +67,13 @@ function performStateAction(currentState: State, line: string, output: PaypalOut
             transactionStartRegExp,
         );
         if (date && description && amountString && fees && total) {
-            const amount = Number(stripCommasFromNumberString(amountString));
+            const amount = Number(removeCommasFromNumberString(amountString));
             const newTransaction: PaypalTransaction = {
                 date: createDateFromSlashFormat(date),
                 description: collapseSpaces(description),
                 // this assumption that we can always use absolute value here may be wrong
-                amount: Math.abs(Number(stripCommasFromNumberString(total))),
-                fees: Math.abs(Number(stripCommasFromNumberString(fees))),
+                amount: Math.abs(Number(removeCommasFromNumberString(total))),
+                fees: Math.abs(Number(removeCommasFromNumberString(fees))),
                 baseAmount: Math.abs(amount),
                 originalText: [line],
             };
@@ -127,7 +127,7 @@ function nextState(currentState: State, line: string): State {
         case State.Activity:
             const amountMatch = safeMatch(line, transactionStartRegExp)[5];
             if (amountMatch) {
-                if (Number(stripCommasFromNumberString(amountMatch)) < 0) {
+                if (Number(removeCommasFromNumberString(amountMatch)) < 0) {
                     return State.ExpenseInside;
                 } else {
                     return State.IncomeInside;
