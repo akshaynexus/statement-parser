@@ -1,6 +1,11 @@
-# statement-parser
+# statement-parser-fab
 
-[![tests](https://github.com/electrovir/statement-parser/workflows/tests/badge.svg)](https://github.com/electrovir/statement-parser/actions/workflows/master-tests.yml)
+NOTE: this is a fork of statement-parser from
+https://github.com/electrovir/statement-parser
+
+Updated to support FAB Bank and updated deps
+
+[![tests](https://github.com/akshaynexus/statement-parser/workflows/tests/badge.svg)](https://github.com/akshaynexus/statement-parser/actions/workflows/master-tests.yml)
 
 Parse bank and credit card statements.
 
@@ -12,17 +17,17 @@ See the [Parsers](#parsers) section below for the available parsers.
 
 # Usage
 
-Install from the [`statement-parser` npm package](https://www.npmjs.com/package/statement-parser).
+Install from the [`statement-parser-fab` npm package](https://www.npmjs.com/package/statement-parser-fab).
 
 ```sh
-npm i statement-parser
+npm i statement-parser-fab
 ```
 
 Currently tested on Node.js versions 12.x and 14.x in combination with the latest macOS, Ubuntu, and Windows.
 
 ## Api
 
-The high level most useful api function is the asynchronous [`parsePdfs`](https://github.com/electrovir/statement-parser/tree/master/src/parser/parse-api.ts) function. Simply pass in an array that has details for each PDF file you wish to parse. Note that there is no synchronous alternative.
+The high level most useful api function is the asynchronous [`parsePdfs`](https://github.com/akshaynexus/statement-parser/tree/master/src/parser/parse-api.ts) function. Simply pass in an array that has details for each PDF file you wish to parse. Note that there is no synchronous alternative.
 
 <!-- example-link: src/readme-examples/api-simple-parse.example.ts -->
 
@@ -39,7 +44,7 @@ parsePdfs([
 ]).then((results) => console.log(results));
 ```
 
-`parsePdfs` accepts an array of [`StatementPdf`](https://github.com/electrovir/statement-parser/tree/master/src/parser/parse-api.ts) objects. Thus, each element in the array should look like the following:
+`parsePdfs` accepts an array of [`StatementPdf`](https://github.com/akshaynexus/statement-parser/tree/master/src/parser/parse-api.ts) objects. Thus, each element in the array should look like the following:
 
 <!-- example-link: src/readme-examples/api-simple-parse-inputs.example.ts -->
 
@@ -341,7 +346,7 @@ Make sure to add a sanitized file test (see [sanitizing pdfs](#sanitizing-pdfs))
 
 ## Creating a new parser
 
-If you find that your statement PDF is coming from a bank or credit card that this package does even have a parser for yet, you can add that parser! See [`example-parser.ts`](https://github.com/electrovir/statement-parser/tree/master/src/parser/implemented-parsers/example-parser.ts) for a good starting point.
+If you find that your statement PDF is coming from a bank or credit card that this package does even have a parser for yet, you can add that parser! See [`example-parser.ts`](https://github.com/akshaynexus/statement-parser/tree/master/src/parser/implemented-parsers/example-parser.ts) for a good starting point.
 
 ## General bug fixes
 
@@ -357,7 +362,7 @@ If you find that your statement PDF is coming from a bank or credit card that th
 1.  Run `npm run sanitize` with the relevant arguments.
     -   For argument help run the following: `npm run sanitize -- --help`
 2.  **Extra super quadruple check** that the sanitized `.json` file does not contain any confidential information in it, such as names of people or businesses, exact transaction amounts, actual dates, etc.
-    -   If there is confidential information, please [open a bug](https://github.com/electrovir/statement-parser/issues) or fix the bug.
+    -   If there is confidential information, please [open a bug](https://github.com/akshaynexus/statement-parser/issues) or fix the bug.
 3.  Run tests. (See [Running tests](#running-tests) for details.)
 4.  Verify that your sanitized `.json` file has been added to the appropriate parser folder in `files/sample-files/sanitized`.
 5.  Commit away!
@@ -377,4 +382,4 @@ If you find that your statement PDF is coming from a bank or credit card that th
 2. If it does not exist already, add a new `testGroup()` call (imported from `test-vir`) for the function that will be tested.
 3. Add new `runTest` calls for the tests you want to add.
 
-See other test files for examples, such as [`array.test.ts`](https://github.com/electrovir/statement-parser/tree/master/src/augments/array.test.ts).
+See other test files for examples, such as [`array.test.ts`](https://github.com/akshaynexus/statement-parser/tree/master/src/augments/array.test.ts).

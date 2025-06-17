@@ -17,6 +17,7 @@
         "iban",
         "Chgs",
         "chgs",
-        "txns"
+        "txns",
+        "readdir"
     ]
 }
