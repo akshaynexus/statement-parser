@@ -112,7 +112,47 @@ function isIncomeTransaction(description: string): boolean {
 function parseTransaction(line: string): ParsedTransaction | undefined {
     const cleanLine = line.replace(/\s+/g, ' ').trim();
 
-    // Skip non-transaction lines
+    // Handle continuation lines first (before checking for date pattern)
+    if (!cleanLine.match(/^\d{2} \w{3} \d{4}/) && pendingTransaction) {
+        // This is a continuation line - append to pending transaction
+        if (pendingTransaction.description) {
+            pendingTransaction.description += ' ' + cleanLine;
+        }
+
+        // Check if this continuation line contains the final balance (transaction complete)
+        const balanceMatch = cleanLine.match(/([\d,]+\.?\d*)\s*$/);
+        if (balanceMatch && balanceMatch[1]) {
+            const balance = parseAmount(balanceMatch[1]);
+
+            // Extract amount from the full description if not already set
+            if (!pendingTransaction.amount && pendingTransaction.description) {
+                const amountMatch = pendingTransaction.description.match(/([\d,]+\.?\d*)/);
+                if (amountMatch && amountMatch[1]) {
+                    const amount = parseAmount(amountMatch[1]);
+                    if (isIncomeTransaction(pendingTransaction.description)) {
+                        pendingTransaction.amount = Math.abs(amount);
+                    } else {
+                        pendingTransaction.amount = -Math.abs(amount);
+                    }
+                }
+            }
+
+            // If we have all required fields, return the completed transaction
+            if (
+                pendingTransaction.date &&
+                pendingTransaction.description &&
+                pendingTransaction.amount !== undefined
+            ) {
+                const completed = pendingTransaction as ParsedTransaction;
+                pendingTransaction = null;
+                return completed;
+            }
+        }
+
+        return undefined; // Still building the transaction
+    }
+
+    // Skip non-transaction lines that don't start with a date
     if (!cleanLine.match(/^\d{2} \w{3} \d{4}/)) {
         return undefined;
     }
@@ -176,43 +216,7 @@ function parseTransaction(line: string): ParsedTransaction | undefined {
         }
     }
 
-    // Handle continuation lines (lines that don't start with date but contain balance)
-    const continuationMatch = cleanLine.match(/^(.+?)\s+([\d,]+\.?\d*)$/);
-    if (continuationMatch && pendingTransaction) {
-        const additionalDesc = continuationMatch[1];
-        const balanceStr = continuationMatch[2];
-
-        // Complete the pending transaction
-        if (pendingTransaction.description && additionalDesc) {
-            pendingTransaction.description += ' ' + additionalDesc.trim();
-        }
-
-        // Try to extract amount from the continuation line
-        if (additionalDesc) {
-            const amountMatch = additionalDesc.match(/([\d,]+\.?\d*)/);
-            if (amountMatch && amountMatch[1] && !pendingTransaction.amount) {
-                const amount = parseAmount(amountMatch[1]);
-                if (isIncomeTransaction(pendingTransaction.description || '')) {
-                    pendingTransaction.amount = Math.abs(amount);
-                } else {
-                    pendingTransaction.amount = -Math.abs(amount);
-                }
-            }
-        }
-
-        // If we have all required fields, return the completed transaction
-        if (
-            pendingTransaction.date &&
-            pendingTransaction.description &&
-            pendingTransaction.amount !== undefined
-        ) {
-            const completed = pendingTransaction as ParsedTransaction;
-            pendingTransaction = null;
-            return completed;
-        }
-    }
-
-    // Start a new pending transaction if line starts with date but lacks balance
+    // Check if this is a transaction line that's missing amount/balance (incomplete)
     const incompleteMatch = cleanLine.match(/^(\d{2} \w{3} \d{4})\s+(\d{2} \w{3} \d{4})\s+(.+)$/);
     if (incompleteMatch) {
         const dateStr = incompleteMatch[1];
@@ -222,11 +226,23 @@ function parseTransaction(line: string): ParsedTransaction | undefined {
             const date = parseDate(dateStr);
 
             if (date) {
+                // Start a new pending transaction
                 pendingTransaction = {
                     date,
                     description: description.trim(),
                     originalText: [line],
                 };
+
+                // Check if the description contains an amount
+                const amountMatch = description.match(/([\d,]+\.?\d*)/);
+                if (amountMatch && amountMatch[1]) {
+                    const amount = parseAmount(amountMatch[1]);
+                    if (isIncomeTransaction(description)) {
+                        pendingTransaction.amount = Math.abs(amount);
+                    } else {
+                        pendingTransaction.amount = -Math.abs(amount);
+                    }
+                }
             }
         }
     }
