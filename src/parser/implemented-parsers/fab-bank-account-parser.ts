@@ -26,6 +26,8 @@ export const fabBankAccountParser = createStatementParser<State, ParsedOutput>({
         'Balance brought forward',
         'Opening balance',
         'Closing Book Balance',
+        'ATM Cash Deposit',
+        'Cash Deposit',
     ],
 });
 
@@ -34,9 +36,29 @@ const statementPeriodRegExp = /Account Statement FROM (\d{2} \w{3} \d{4}) TO (\d
 const accountNumberRegExp = /AC-NUM (\d{3}-\d{3}-\d{7}-\d{2}-\d)/;
 const customerNameRegExp = /^([A-Z ]+?)\s+AC-NUM/;
 
+// Enhanced transaction parsing patterns
+const transactionPatterns = [
+    // Pattern 1: Standard format - DATE VALUE_DATE DESCRIPTION AMOUNT BALANCE
+    /^(\d{2} \w{3} \d{4})\s+(\d{2} \w{3} \d{4})\s+(.+?)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/,
+
+    // Pattern 2: With currency - DATE VALUE_DATE DESCRIPTION CURRENCY AMOUNT BALANCE
+    /^(\d{2} \w{3} \d{4})\s+(\d{2} \w{3} \d{4})\s+(.+?)\s+[A-Z]{3}\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/,
+
+    // Pattern 3: Description with embedded amount - DATE VALUE_DATE DESCRIPTION_WITH_AMOUNT BALANCE
+    /^(\d{2} \w{3} \d{4})\s+(\d{2} \w{3} \d{4})\s+(.+?)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/,
+
+    // Pattern 4: VAT transactions - DATE VALUE_DATE POS Settlement VAT AED AMOUNT BALANCE
+    /^(\d{2} \w{3} \d{4})\s+(\d{2} \w{3} \d{4})\s+(POS Settlement VAT AED)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/,
+
+    // Pattern 5: Switch/ATM transactions - DATE VALUE_DATE TYPE AMOUNT BALANCE
+    /^(\d{2} \w{3} \d{4})\s+(\d{2} \w{3} \d{4})\s+(Switch Transaction|SW WDL Chgs|ATM Cash Deposit)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/,
+];
+
+// Store incomplete transactions across multiple lines
+let pendingTransaction: Partial<ParsedTransaction> | null = null;
+
 function parseDate(dateString: string): Date | undefined {
     try {
-        // Convert "01 APR 2025" to ISO format "2025-04-01"
         const months: {[key: string]: string} = {
             JAN: '01',
             FEB: '02',
@@ -68,8 +90,26 @@ function parseDate(dateString: string): Date | undefined {
     }
 }
 
+function parseAmount(amountStr: string): number {
+    return parseFloat(removeCommasFromNumberString(amountStr));
+}
+
+function isIncomeTransaction(description: string): boolean {
+    const incomeKeywords = [
+        'transfer',
+        'inward',
+        'deposit',
+        'reverse charges',
+        'atm cash deposit',
+        'cash deposit',
+        'credit',
+    ];
+
+    const lowerDesc = description.toLowerCase();
+    return incomeKeywords.some((keyword) => lowerDesc.includes(keyword));
+}
+
 function parseTransaction(line: string): ParsedTransaction | undefined {
-    // Clean up the line by removing extra spaces
     const cleanLine = line.replace(/\s+/g, ' ').trim();
 
     // Skip non-transaction lines
@@ -77,98 +117,116 @@ function parseTransaction(line: string): ParsedTransaction | undefined {
         return undefined;
     }
 
-    // Pattern 1: Regular transactions - DATE VALUE_DATE DESCRIPTION AMOUNT BALANCE
-    const regularMatch = cleanLine.match(
-        /^(\d{2} \w{3} \d{4})\s+(\d{2} \w{3} \d{4})\s+(.+?)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/,
-    );
+    // Try each transaction pattern
+    for (let i = 0; i < transactionPatterns.length; i++) {
+        const pattern = transactionPatterns[i];
+        if (!pattern) continue;
 
-    if (regularMatch) {
-        const [
-            ,
-            dateStr,
-            ,
-            description,
-            amountStr,
-            balanceStr,
-        ] = regularMatch;
+        const match = cleanLine.match(pattern);
 
-        if (dateStr && description && amountStr && balanceStr) {
-            const date = parseDate(dateStr);
+        if (match) {
+            let dateStr: string | undefined,
+                description: string | undefined,
+                amountStr: string | undefined,
+                balanceStr: string | undefined;
 
-            if (date) {
-                const amount = parseFloat(removeCommasFromNumberString(amountStr));
-                const desc = description.trim();
+            if (i === 3) {
+                // VAT pattern
+                dateStr = match[1];
+                description = match[3];
+                amountStr = match[4];
+                balanceStr = match[6];
+            } else if (i === 4) {
+                // Switch/ATM pattern
+                dateStr = match[1];
+                description = match[3];
+                amountStr = match[4];
+                balanceStr = match[5];
+            } else {
+                // Standard patterns
+                dateStr = match[1];
+                description = match[3];
+                amountStr = match[4];
+                balanceStr = match[5];
+            }
 
-                // Determine if it's income or expense based on transaction type
-                let finalAmount = amount;
+            if (dateStr && description && amountStr && balanceStr) {
+                const date = parseDate(dateStr);
 
-                // Income transaction types (positive amounts)
-                if (
-                    desc.toLowerCase().includes('transfer') ||
-                    desc.toLowerCase().includes('inward') ||
-                    desc.toLowerCase().includes('deposit') ||
-                    desc.toLowerCase().includes('reverse charges') ||
-                    desc.toLowerCase().includes('atm cash deposit') ||
-                    desc.toLowerCase().includes('cash deposit')
-                ) {
-                    finalAmount = Math.abs(amount); // Ensure positive for income
-                } else {
-                    // Expense transactions (negative amounts)
-                    finalAmount = -Math.abs(amount); // Ensure negative for expenses
+                if (date) {
+                    const amount = parseAmount(amountStr);
+                    const desc = description.trim();
+
+                    // Determine if it's income or expense
+                    let finalAmount = amount;
+                    if (isIncomeTransaction(desc)) {
+                        finalAmount = Math.abs(amount); // Positive for income
+                    } else {
+                        finalAmount = -Math.abs(amount); // Negative for expenses
+                    }
+
+                    return {
+                        date,
+                        description: desc,
+                        amount: finalAmount,
+                        originalText: [line],
+                    };
                 }
-
-                return {
-                    date,
-                    description: desc,
-                    amount: finalAmount,
-                    originalText: [line],
-                };
             }
         }
     }
 
-    // Pattern 2: Special income transactions like ATM Cash Deposit
-    // Format: DATE VALUE_DATE DESCRIPTION_WITH_AMOUNT FINAL_BALANCE
-    const depositMatch = cleanLine.match(
-        /^(\d{2} \w{3} \d{4})\s+(\d{2} \w{3} \d{4})\s+(.+?)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/,
-    );
+    // Handle continuation lines (lines that don't start with date but contain balance)
+    const continuationMatch = cleanLine.match(/^(.+?)\s+([\d,]+\.?\d*)$/);
+    if (continuationMatch && pendingTransaction) {
+        const additionalDesc = continuationMatch[1];
+        const balanceStr = continuationMatch[2];
 
-    if (depositMatch) {
-        const [
-            ,
-            dateStr,
-            ,
-            fullDesc,
-            possibleAmount,
-            balanceStr,
-        ] = depositMatch;
+        // Complete the pending transaction
+        if (pendingTransaction.description && additionalDesc) {
+            pendingTransaction.description += ' ' + additionalDesc.trim();
+        }
 
-        if (dateStr && fullDesc && balanceStr) {
-            // Look for amount pattern in description (like "18,000.00 59,341.62")
-            const amountInDesc = fullDesc.match(/([\d,]+\.?\d*)/);
-
-            if (amountInDesc && amountInDesc[1]) {
-                const date = parseDate(dateStr);
-
-                if (date) {
-                    const amount = parseFloat(removeCommasFromNumberString(amountInDesc[1]));
-                    const desc = fullDesc.replace(/\s+[\d,]+\.?\d*.*$/, '').trim(); // Remove amount from description
-
-                    // If it's clearly a deposit/income transaction
-                    if (
-                        desc.toLowerCase().includes('deposit') ||
-                        desc.toLowerCase().includes('transfer') ||
-                        desc.toLowerCase().includes('inward') ||
-                        desc.toLowerCase().includes('cash deposit')
-                    ) {
-                        return {
-                            date,
-                            description: desc,
-                            amount: Math.abs(amount), // Positive for income
-                            originalText: [line],
-                        };
-                    }
+        // Try to extract amount from the continuation line
+        if (additionalDesc) {
+            const amountMatch = additionalDesc.match(/([\d,]+\.?\d*)/);
+            if (amountMatch && amountMatch[1] && !pendingTransaction.amount) {
+                const amount = parseAmount(amountMatch[1]);
+                if (isIncomeTransaction(pendingTransaction.description || '')) {
+                    pendingTransaction.amount = Math.abs(amount);
+                } else {
+                    pendingTransaction.amount = -Math.abs(amount);
                 }
+            }
+        }
+
+        // If we have all required fields, return the completed transaction
+        if (
+            pendingTransaction.date &&
+            pendingTransaction.description &&
+            pendingTransaction.amount !== undefined
+        ) {
+            const completed = pendingTransaction as ParsedTransaction;
+            pendingTransaction = null;
+            return completed;
+        }
+    }
+
+    // Start a new pending transaction if line starts with date but lacks balance
+    const incompleteMatch = cleanLine.match(/^(\d{2} \w{3} \d{4})\s+(\d{2} \w{3} \d{4})\s+(.+)$/);
+    if (incompleteMatch) {
+        const dateStr = incompleteMatch[1];
+        const description = incompleteMatch[3];
+
+        if (dateStr && description) {
+            const date = parseDate(dateStr);
+
+            if (date) {
+                pendingTransaction = {
+                    date,
+                    description: description.trim(),
+                    originalText: [line],
+                };
             }
         }
     }
@@ -177,27 +235,22 @@ function parseTransaction(line: string): ParsedTransaction | undefined {
 }
 
 function extractAccountInfo(line: string, output: ParsedOutput): void {
-    // Try regular match for account number and customer name
     const accountMatch = line.match(accountNumberRegExp);
     if (accountMatch && accountMatch[1]) {
-        // Extract last segment after the last dash: "190-100-5675760-00-2" -> "2"
         const accountParts = accountMatch[1].split('-');
         output.accountSuffix = accountParts[accountParts.length - 1] || '';
 
-        // Extract customer name from the same line
         const nameMatch = line.match(customerNameRegExp);
         if (nameMatch && nameMatch[1]) {
             output.name = nameMatch[1].trim();
         }
     }
 
-    // Try regular match for statement period
     const periodMatch = line.match(statementPeriodRegExp);
     if (periodMatch && periodMatch[1] && periodMatch[2]) {
         output.startDate = parseDate(periodMatch[1]);
         output.endDate = parseDate(periodMatch[2]);
 
-        // Set year prefix based on start date
         if (output.startDate) {
             output.yearPrefix = Math.floor(output.startDate.getFullYear() / 100);
         }
@@ -215,12 +268,10 @@ function performStateAction(
     // Extract account information in all states
     extractAccountInfo(cleanLine, output);
 
-    // Set year prefix from parser options if not already set
     if (!output.yearPrefix) {
         output.yearPrefix = parserOptions.yearPrefix;
     }
 
-    // Parse transactions in the transaction lines state
     if (currentState === State.TransactionLines) {
         // Skip header lines and balance forward lines
         if (
@@ -229,7 +280,13 @@ function performStateAction(
             cleanLine.includes('Balance brought forward') ||
             cleanLine.startsWith('Sheet no.') ||
             cleanLine.includes('Important:') ||
-            cleanLine.length < 10
+            cleanLine.includes('T&Cs Apply') ||
+            cleanLine.includes('First Abu Dhabi Bank') ||
+            cleanLine.includes('Contact Centre') ||
+            cleanLine.includes('endeavor to get back') ||
+            cleanLine.match(/^[\u0600-\u06FF\s]+$/) || // Arabic text
+            cleanLine.length < 5 ||
+            cleanLine.match(/^\d+$/) // Standalone numbers
         ) {
             return output;
         }
@@ -237,7 +294,6 @@ function performStateAction(
         const transaction = parseTransaction(cleanLine);
 
         if (transaction) {
-            // Categorize as income or expense based on amount
             if (transaction.amount > 0) {
                 output.incomes.push(transaction);
             } else {
@@ -258,16 +314,15 @@ function nextState(
 
     switch (currentState) {
         case State.Header:
-            // Start parsing transactions when we see the transaction header
             if (cleanLine.includes('date value date description debit credit balance')) {
                 return State.TransactionLines;
             }
             break;
 
         case State.TransactionLines:
-            // Continue parsing until we reach the end of the statement
             if (
                 cleanLine.includes('closing book balance') ||
+                cleanLine.includes('closing statement balance') ||
                 cleanLine.includes('end of statement') ||
                 cleanLine.includes('total debit txns') ||
                 (cleanLine.includes('total') && cleanLine.includes('txns'))
@@ -277,7 +332,6 @@ function nextState(
             break;
 
         case State.End:
-            // Stay in end state
             break;
     }
 
