@@ -119,37 +119,30 @@ function parseTransaction(line: string): ParsedTransaction | undefined {
             pendingTransaction.description += ' ' + cleanLine;
         }
 
-        // Check if this continuation line contains the final balance (transaction complete)
-        const balanceMatch = cleanLine.match(/([\d,]+\.?\d*)\s*$/);
-        if (balanceMatch && balanceMatch[1]) {
-            const balance = parseAmount(balanceMatch[1]);
+        // Try to complete the transaction now that we have more description
+        completePendingTransaction();
 
-            // Extract amount from the full description if not already set
-            if (!pendingTransaction.amount && pendingTransaction.description) {
-                const amountMatch = pendingTransaction.description.match(/([\d,]+\.?\d*)/);
-                if (amountMatch && amountMatch[1]) {
-                    const amount = parseAmount(amountMatch[1]);
-                    if (isIncomeTransaction(pendingTransaction.description)) {
-                        pendingTransaction.amount = Math.abs(amount);
-                    } else {
-                        pendingTransaction.amount = -Math.abs(amount);
-                    }
-                }
-            }
+        return undefined;
+    }
 
-            // If we have all required fields, return the completed transaction
-            if (
-                pendingTransaction.date &&
-                pendingTransaction.description &&
-                pendingTransaction.amount !== undefined
-            ) {
-                const completed = pendingTransaction as ParsedTransaction;
-                pendingTransaction = null;
+    // If we have a pending transaction and we're starting a new date line, complete the previous one
+    if (pendingTransaction && cleanLine.match(/^\d{2} \w{3} \d{4}/)) {
+        const completed = completePendingTransaction();
+
+        // Now process the current line as a new transaction
+        const newTransaction = parseNewTransaction(cleanLine, line);
+        if (newTransaction) {
+            if (newTransaction.amount !== undefined) {
+                // Complete transaction
+                return completed;
+            } else {
+                // Incomplete transaction - store as pending
+                pendingTransaction = newTransaction;
                 return completed;
             }
         }
 
-        return undefined; // Still building the transaction
+        return completed;
     }
 
     // Skip non-transaction lines that don't start with a date
@@ -157,6 +150,73 @@ function parseTransaction(line: string): ParsedTransaction | undefined {
         return undefined;
     }
 
+    // Process new transaction
+    const newTransaction = parseNewTransaction(cleanLine, line);
+    if (newTransaction) {
+        // Check if this is a complete transaction or needs continuation
+        if (newTransaction.amount !== undefined) {
+            // Complete transaction
+            return newTransaction;
+        } else {
+            // Incomplete transaction - store as pending
+            pendingTransaction = newTransaction;
+            return undefined;
+        }
+    }
+
+    return undefined;
+}
+
+function completePendingTransaction(): ParsedTransaction | undefined {
+    if (!pendingTransaction || !pendingTransaction.description) {
+        return undefined;
+    }
+
+    // Extract amount and balance from the full description
+    const description = pendingTransaction.description;
+
+    // Look for amount and balance pattern in the full description
+    // Pattern: "description amount balance" where balance is at the end
+    const balanceMatch = description.match(/([\d,]+\.?\d*)\s*$/);
+
+    if (balanceMatch && balanceMatch[1]) {
+        // Found balance at the end
+        const balance = parseAmount(balanceMatch[1]);
+
+        // Now look for the amount (should be the second-to-last number)
+        const beforeBalance = description.substring(0, description.lastIndexOf(balanceMatch[1]));
+        const amountMatch = beforeBalance.match(/([\d,]+\.?\d*)\s*$/);
+
+        if (amountMatch && amountMatch[1]) {
+            const amount = parseAmount(amountMatch[1]);
+
+            // Complete the transaction
+            let finalAmount = amount;
+            if (isIncomeTransaction(description)) {
+                finalAmount = Math.abs(amount);
+            } else {
+                finalAmount = -Math.abs(amount);
+            }
+
+            const completed: ParsedTransaction = {
+                date: pendingTransaction.date!,
+                description: description.trim(),
+                amount: finalAmount,
+                originalText: pendingTransaction.originalText || [],
+            };
+
+            pendingTransaction = null;
+            return completed;
+        }
+    }
+
+    return undefined;
+}
+
+function parseNewTransaction(
+    cleanLine: string,
+    originalLine: string,
+): ParsedTransaction | undefined {
     // Try each transaction pattern
     for (let i = 0; i < transactionPatterns.length; i++) {
         const pattern = transactionPatterns[i];
@@ -209,7 +269,7 @@ function parseTransaction(line: string): ParsedTransaction | undefined {
                         date,
                         description: desc,
                         amount: finalAmount,
-                        originalText: [line],
+                        originalText: [originalLine],
                     };
                 }
             }
@@ -226,23 +286,12 @@ function parseTransaction(line: string): ParsedTransaction | undefined {
             const date = parseDate(dateStr);
 
             if (date) {
-                // Start a new pending transaction
-                pendingTransaction = {
+                // Create incomplete transaction (will be completed later)
+                return {
                     date,
                     description: description.trim(),
-                    originalText: [line],
-                };
-
-                // Check if the description contains an amount
-                const amountMatch = description.match(/([\d,]+\.?\d*)/);
-                if (amountMatch && amountMatch[1]) {
-                    const amount = parseAmount(amountMatch[1]);
-                    if (isIncomeTransaction(description)) {
-                        pendingTransaction.amount = Math.abs(amount);
-                    } else {
-                        pendingTransaction.amount = -Math.abs(amount);
-                    }
-                }
+                    originalText: [originalLine],
+                } as ParsedTransaction;
             }
         }
     }
@@ -316,6 +365,33 @@ function performStateAction(
                 output.expenses.push(transaction);
             }
         }
+    }
+
+    // Complete any pending transaction when leaving TransactionLines state
+    if (currentState === State.End && pendingTransaction) {
+        // Try to complete the pending transaction by extracting amount from description
+        if (pendingTransaction.description && !pendingTransaction.amount) {
+            const amountMatch = pendingTransaction.description.match(/([\d,]+\.?\d*)/);
+            if (amountMatch && amountMatch[1]) {
+                const amount = parseAmount(amountMatch[1]);
+                if (isIncomeTransaction(pendingTransaction.description)) {
+                    pendingTransaction.amount = Math.abs(amount);
+                } else {
+                    pendingTransaction.amount = -Math.abs(amount);
+                }
+            }
+        }
+
+        // Add the completed transaction
+        if (pendingTransaction.amount !== undefined) {
+            if (pendingTransaction.amount > 0) {
+                output.incomes.push(pendingTransaction as ParsedTransaction);
+            } else {
+                output.expenses.push(pendingTransaction as ParsedTransaction);
+            }
+        }
+
+        pendingTransaction = null;
     }
 
     return output;
