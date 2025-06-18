@@ -18,6 +18,7 @@
         "Chgs",
         "chgs",
         "txns",
-        "readdir"
+        "readdir",
+        "Amnt"
     ]
 }

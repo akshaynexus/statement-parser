@@ -92,7 +92,8 @@ function parseTransactionLine(line: string): ParsedTransaction | undefined {
     const cleanLine = line.replace(/\s+/g, ' ').trim();
 
     // Skip empty lines and irrelevant content
-    if (!cleanLine || 
+    if (
+        !cleanLine ||
         cleanLine.includes('Balance carried forward') ||
         cleanLine.includes('Balance brought forward') ||
         cleanLine.includes('Important:') ||
@@ -124,15 +125,16 @@ function parseTransactionLine(line: string): ParsedTransaction | undefined {
 
     // Main transaction pattern: DATE VALUE_DATE DESCRIPTION AMOUNT BALANCE
     // Example: "17 APR 2025 15 APR 2025 POS Settlement WWW.GRAB.COM BANGKOK THB 81.57 63,049.27"
-    const transactionPattern = /^(\d{2} \w{3} \d{4})\s+(\d{2} \w{3} \d{4})\s+(.+?)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/;
+    const transactionPattern =
+        /^(\d{2} \w{3} \d{4})\s+(\d{2} \w{3} \d{4})\s+(.+?)\s+([\d,]+\.?\d*)\s+([\d,]+\.?\d*)$/;
     const match = cleanLine.match(transactionPattern);
-    
+
     if (match && match[1] && match[3] && match[4] && match[5]) {
         const transactionDate = parseDate(match[1]);
         const description = match[3].trim();
         const amount = parseAmount(match[4]);
         const balance = parseAmount(match[5]);
-        
+
         if (!transactionDate || !description || isNaN(amount) || isNaN(balance)) {
             return undefined;
         }
@@ -154,8 +156,11 @@ function parseTransactionLine(line: string): ParsedTransaction | undefined {
     const datePattern = /^(\d{2} \w{3} \d{4})/;
     const hasDate = datePattern.test(cleanLine);
     const hasAmount = /[\d,]+\.?\d+/.test(cleanLine);
-    const hasTransactionKeywords = /POS Settlement|Transfer|Payment|ATM|Deposit|Withdrawal|Charges|VAT|Switch|Reverse|Inward|Outward/i.test(cleanLine);
-    
+    const hasTransactionKeywords =
+        /POS Settlement|Transfer|Payment|ATM|Deposit|Withdrawal|Charges|VAT|Switch|Reverse|Inward|Outward/i.test(
+            cleanLine,
+        );
+
     if (hasDate && hasAmount && hasTransactionKeywords) {
         // Try to extract what we can
         const dateMatch = cleanLine.match(datePattern);
@@ -167,12 +172,12 @@ function parseTransactionLine(line: string): ParsedTransaction | undefined {
                 if (numbers.length >= 2) {
                     const amountStr = numbers[numbers.length - 2];
                     const balanceStr = numbers[numbers.length - 1];
-                    
+
                     if (!amountStr || !balanceStr) return undefined;
-                    
+
                     const amount = parseAmount(amountStr);
                     const balance = parseAmount(balanceStr);
-                    
+
                     // Extract description by removing dates and numbers
                     let description = cleanLine
                         .replace(/^\d{2} \w{3} \d{4}\s*/, '') // Remove first date
@@ -180,7 +185,7 @@ function parseTransactionLine(line: string): ParsedTransaction | undefined {
                         .replace(/[\d,]+\.?\d*\s*$/, '') // Remove balance at end
                         .replace(/[\d,]+\.?\d*\s*$/, '') // Remove amount at end
                         .trim();
-                    
+
                     if (description && !isNaN(amount) && !isNaN(balance)) {
                         const isIncome = isIncomeTransaction(description);
                         const finalAmount = isIncome ? Math.abs(amount) : -Math.abs(amount);
@@ -216,12 +221,12 @@ function extractAccountInfo(line: string, output: ParsedOutput): void {
     if (periodMatch && periodMatch[1] && periodMatch[2]) {
         const startDate = parseDate(periodMatch[1]);
         const endDate = parseDate(periodMatch[2]);
-        
+
         if (startDate) {
             output.startDate = startDate;
             output.yearPrefix = Math.floor(startDate.getFullYear() / 100);
         }
-        
+
         if (endDate) {
             output.endDate = endDate;
         }
@@ -268,8 +273,11 @@ function nextState(
     switch (currentState) {
         case State.Header:
             // Start parsing transactions after we see the table header
-            if (cleanLine.includes('date value date description debit credit balance') ||
-                (cleanLine.includes('balance') && (cleanLine.includes('opening') || cleanLine.includes('brought forward')))) {
+            if (
+                cleanLine.includes('date value date description debit credit balance') ||
+                (cleanLine.includes('balance') &&
+                    (cleanLine.includes('opening') || cleanLine.includes('brought forward')))
+            ) {
                 return State.TransactionLines;
             }
             break;
@@ -292,4 +300,3 @@ function nextState(
 
     return currentState;
 }
-
