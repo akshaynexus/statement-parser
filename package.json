@@ -1,6 +1,6 @@
 {
     "name": "statement-parser-fab",
-    "version": "2.0.5",
+    "version": "2.0.6",
     "description": "Parse bank and credit card statements. Updated fork with FAB (First Abu Dhabi Bank) support and maintained dependencies.",
     "keywords": [
         "pdf",
