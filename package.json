@@ -1,6 +1,6 @@
 {
     "name": "statement-parser-fab",
-    "version": "2.0.6",
+    "version": "2.0.7",
     "description": "Parse bank and credit card statements. Updated fork with FAB (First Abu Dhabi Bank) support and maintained dependencies.",
     "keywords": [
         "pdf",
@@ -26,13 +26,13 @@
         "maintained",
         "updated"
     ],
-    "homepage": "https://github.com/akshaynexus/statement-parser",
+    "homepage": "https://github.com/akshaynexus/statement-parser-fab",
     "bugs": {
-        "url": "https://github.com/akshaynexus/statement-parser/issues"
+        "url": "https://github.com/akshaynexus/statement-parser-fab/issues"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/akshaynexus/statement-parser"
+        "url": "https://github.com/akshaynexus/statement-parser-fab"
     },
     "license": "MIT",
     "author": {
